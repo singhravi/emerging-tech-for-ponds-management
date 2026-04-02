@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaVision — AI Weed Control for Makhana &amp; Singhara</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#eeede8;
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#8a8a85;
+  --border:rgba(0,0,0,0.10);--border2:rgba(0,0,0,0.18);
+  --green:#3b6d11;--green-bg:#eaf3de;--green-border:#639922;--green-text:#27500a;
+  --red:#a32d2d;--red-bg:#fcebeb;--red-border:#e24b4a;--red-text:#791f1f;
+  --amber:#854f0b;--amber-bg:#faeeda;--amber-border:#ef9f27;--amber-text:#633806;
+  --blue:#185fa5;--blue-bg:#e6f1fb;--blue-border:#378add;--blue-text:#0c447c;
+  --radius:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+    --text:#f0efe8;--text2:#b4b2a9;--text3:#888780;
+    --border:rgba(255,255,255,0.10);--border2:rgba(255,255,255,0.18);
+    --green:#97c459;--green-bg:#27500a;--green-border:#639922;--green-text:#c0dd97;
+    --red:#f09595;--red-bg:#501313;--red-border:#e24b4a;--red-text:#f7c1c1;
+    --amber:#ef9f27;--amber-bg:#412402;--amber-border:#ba7517;--amber-text:#fac775;
+    --blue:#85b7eb;--blue-bg:#042c53;--blue-border:#378add;--blue-text:#b5d4f4;
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.shell{max-width:900px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:36px;height:36px;border-radius:var(--radius);background:var(--green-bg);border:0.5px solid var(--green-border);display:flex;align-items:center;justify-content:center;font-size:18px}
+.brand-name{font-size:15px;font-weight:600;color:var(--text)}
+.brand-name span{color:var(--green)}
+.brand-sub{font-size:11px;color:var(--text3)}
+.nav-badge{font-size:11px;padding:5px 12px;border:0.5px solid var(--green-border);border-radius:20px;color:var(--green);background:var(--green-bg)}
+
+/* TABS */
+.tabs{display:flex;border-bottom:0.5px solid var(--border);background:var(--bg);position:sticky;top:65px;z-index:9}
+.tb{flex:1;padding:11px 8px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;color:var(--text3);border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+.tb:hover{color:var(--text2)}
+.tb.on{color:var(--green);border-bottom-color:var(--green-border)}
+
+/* PAGES */
+.pg{display:none;flex-direction:column;gap:16px;padding:16px 20px 32px}
+.pg.on{display:flex}
+
+/* CARDS */
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+
+/* METRICS */
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mc{background:var(--bg2);border-radius:var(--radius);padding:12px}
+.ml{font-size:11px;color:var(--text3);margin-bottom:4px}
+.mv{font-size:22px;font-weight:600}
+.mv.g{color:var(--green)}.mv.r{color:var(--red)}.mv.a{color:var(--amber)}.mv.b{color:var(--blue)}
+
+/* BUTTONS */
+.btn{font-family:inherit;font-size:12px;padding:8px 16px;border-radius:var(--radius);cursor:pointer;border:0.5px solid var(--border2);background:transparent;color:var(--text);transition:background .15s,opacity .15s}
+.btn:hover:not(:disabled){background:var(--bg2)}
+.btn:active:not(:disabled){transform:scale(0.98)}
+.btn:disabled{opacity:0.38;cursor:not-allowed}
+.btn.p{background:var(--green-bg);border-color:var(--green-border);color:var(--green-text)}
+.btn.p:hover:not(:disabled){opacity:0.85}
+.brow{display:flex;gap:8px;flex-wrap:wrap}
+
+/* LOG */
+.log{background:var(--bg2);border-radius:var(--radius);padding:10px 12px;font-size:11px;font-family:'SF Mono',Consolas,'Courier New',monospace;height:92px;overflow-y:auto;line-height:1.85;border:0.5px solid var(--border)}
+.log .ok{color:var(--green)}.log .wi{color:var(--amber)}.log .in{color:var(--blue)}.log .er{color:var(--red)}
+
+/* CANVAS */
+canvas{display:block;width:100%;border-radius:var(--radius);border:0.5px solid var(--border)}
+
+/* STATUS LABEL */
+.slbl{font-size:11px;color:var(--text3);margin-bottom:8px}
+
+/* SECTION LABEL */
+.seclbl{font-size:11px;color:var(--text3);font-weight:500;padding-bottom:6px;border-bottom:0.5px solid var(--border);margin-bottom:12px}
+
+/* PIPELINE STEPPER */
+.pipe-header{margin-bottom:28px}
+.pipe-header-label{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);margin-bottom:6px}
+.pipe-header-title{font-size:22px;font-weight:700;color:var(--text);line-height:1.2}
+.pipe-header-sub{font-size:13px;color:var(--text3);margin-top:4px}
+.stepper{display:flex;flex-direction:column;gap:0;position:relative}
+.step-row{display:flex;gap:0;position:relative}
+.step-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:56px}
+.step-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:2px solid var(--green-border);background:var(--green-bg);position:relative;z-index:1}
+.step-line{width:2px;flex:1;min-height:16px;background:var(--border2);margin:0 auto}
+.step-row:last-child .step-line{display:none}
+.step-body{flex:1;padding:0 0 28px 16px;padding-top:6px}
+.step-phase{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--green);margin-bottom:4px}
+.step-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.3}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px}
+
+
+/* BENEFITS */
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bc{background:var(--bg2);border-radius:var(--radius-lg);padding:16px}
+.bv{font-size:22px;font-weight:700;margin-bottom:4px}
+.bv.g{color:var(--green)}.bv.a{color:var(--amber)}.bv.b{color:var(--blue)}
+.bt{font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text)}
+.bd{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* ECO GRID */
+.egrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ec{background:var(--bg2);border-radius:var(--radius);padding:12px}
+.et{font-size:12px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.ed{font-size:11px;color:var(--text2);line-height:1.55}
+
+/* SAVINGS BANNER */
+.savings{background:var(--green-bg);border:0.5px solid var(--green-border);border-radius:var(--radius-lg);padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.savings-left{flex:1;min-width:200px}
+.savings-title{font-size:15px;font-weight:600;color:var(--green-text);margin-bottom:4px}
+.savings-sub{font-size:12px;color:var(--text2);line-height:1.5}
+.savings-right{text-align:right;flex-shrink:0}
+.savings-big{font-size:32px;font-weight:700;color:var(--green);line-height:1}
+.savings-unit{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* FOOTER */
+footer{margin-top:auto;border-top:0.5px solid var(--border);padding:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--bg)}
+.ftags{display:flex;gap:6px;flex-wrap:wrap}
+.ftag{font-size:10px;padding:4px 10px;border:0.5px solid var(--border);border-radius:12px;color:var(--text3)}
+.fcopy{font-size:11px;color:var(--text3)}
+
+@media(max-width:540px){
+  .mrow{grid-template-columns:repeat(2,1fr)}
+  .bgrid{grid-template-columns:1fr}
+  .egrid{grid-template-columns:1fr 1fr}
+  nav{padding:12px 14px}
+  .pg{padding:14px 14px 28px}
+  .savings{flex-direction:column;text-align:center}
+  .savings-right{text-align:center}
+  .pipe-two-col{grid-template-columns:1fr !important}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- NAV -->
+<nav>
+  <div class="brand">
+    <div class="brand-sub" style="font-size:13px;color:var(--text2)">AI · Robotics · Wetland Intelligence</div>
+  </div>
+  <div class="nav-badge">Conceptual Demo</div>
+</nav>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tb on" onclick="switchTab('pond',this)">&#127754; Live Pond</button>
+  <button class="tb" onclick="switchTab('pipe',this)">&#9881;&#65039; Pipeline</button>
+  <button class="tb" onclick="switchTab('outcomes',this)">&#127807; Outcomes</button>
+</div>
+
+<!-- ══════════════════════ POND TAB ══════════════════════ -->
+<div class="pg on" id="pg-pond">
+  <div class="mrow">
+    <div class="mc"><div class="ml">Weeds detected</div><div class="mv r" id="mDet">0</div></div>
+    <div class="mc"><div class="ml">Weeds cleared</div><div class="mv g" id="mClr">0</div></div>
+    <div class="mc"><div class="ml">Fish safe</div><div class="mv g">100%</div></div>
+    <div class="mc"><div class="ml">Herbicide used</div><div class="mv g">0%</div></div>
+  </div>
+
+  <div class="card" style="padding:12px">
+    <div class="slbl" id="statusLbl">Press Start Mission to begin the automated drone + robot sequence</div>
+    <canvas id="pc" height="340"></canvas>
+    <div class="brow" style="margin-top:10px">
+      <button class="btn p" id="btnStart" onclick="startMission()">&#9654; Start mission</button>
+      <button class="btn" id="btnReset" onclick="resetPond()">&#8635; Reset pond</button>
+      <button class="btn" id="btnSpawn" onclick="spawnExtra()">&#43; Add weeds</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:12px">
+    <div class="slbl" style="margin-bottom:6px">System log</div>
+    <div class="log" id="logEl"></div>
+  </div>
+
+  <div class="savings">
+    <div class="savings-left">
+      <div class="savings-title">Annual farm savings — ₹8,000–15,000 per hectare</div>
+      <div class="savings-sub">Labour reduction + herbicide elimination + higher crop revenue. Every enrolled hectare pays back the system cost within 2 seasons.</div>
+    </div>
+    <div class="savings-right">
+      <div class="savings-big">₹15K</div>
+      <div class="savings-unit">max savings / ha / year</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PIPELINE TAB ══════════════════════ -->
+<div class="pg" id="pg-pipe">
+
+  <div class="pipe-header">
+    <div class="pipe-header-label">Automated technology pipeline</div>
+    <div class="pipe-header-title">From pond scan to weed-free water — 6 stages</div>
+    <div class="pipe-header-sub">Every mission runs the full sequence autonomously, with zero herbicide and zero fish disturbance.</div>
+  </div>
+
+  <div class="stepper">
+
+    <div class="step-row">
+      <div class="step-left">
+        <div class="step-icon">&#128248;</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-phase">Stage 01 &mdash; Aerial survey</div>
+        <div class="step-title">Drone multispectral survey</div>
+        <div class="step-desc">An autonomous drone flies a pre-programmed grid pattern at 5 m altitude. Onboard 5-band multispectral and RGB cameras capture imagery every 0.5 s, building a complete spatial map of the pond surface. Coverage rate: 1 hectare in under 12 minutes.</div>
+
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-left">
+        <div class="step-icon">&#129504;</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-phase">Stage 02 &mdash; Computer vision</div>
+        <div class="step-title">AI species classification</div>
+        <div class="step-desc">Edge-deployed YOLOv8-nano detects objects in real time; EfficientNet-B2 classifies each region to species level. The model distinguishes Makhana pads, Singhara, three invasive weed species, open water, and fish — all within 80 ms per frame on the onboard Jetson Orin.</div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-left">
+        <div class="step-icon">&#128205;</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-phase">Stage 03 &mdash; Mission planning</div>
+        <div class="step-title">Weed coordinate extraction &amp; queue</div>
+        <div class="step-desc">Detected bounding boxes are converted to GPS coordinates using camera calibration and drone telemetry. A priority queue is built — densest weed clusters are cleared first to maximise crop light exposure as quickly as possible.</div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-left">
+        <div class="step-icon">&#127700;</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-phase">Stage 04 &mdash; Robot deployment</div>
+        <div class="step-title">Pontoon robot navigation</div>
+        <div class="step-desc">The floating pontoon robot receives the weed coordinate queue via 900 MHz LoRa mesh. It navigates using GPS and ultrasonic obstacle avoidance, decelerating within designated fish zones to avoid any disturbance to aquatic life.</div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-left">
+        <div class="step-icon">&#129470;</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-phase">Stage 05 &mdash; Extraction</div>
+        <div class="step-title">Mechanical weed extraction</div>
+        <div class="step-desc">A 6-DOF arm with soft-grip end effector grasps each weed stem at root level and extracts it completely. A force-torque sensor caps grip pressure at 2.5 N — preventing any disturbance to fish or adjacent crop plants. Extracted biomass is collected in an onboard bin for composting.</div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-left">
+        <div class="step-icon">&#128202;</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-phase">Stage 06 &mdash; Reporting</div>
+        <div class="step-title">Analytics &amp; farmer reporting</div>
+        <div class="step-desc">All operations are logged to a cloud dashboard in real time. Weed density heatmaps, clearance rates, robot path efficiency, and seasonal yield projections are auto-generated after each mission. Farmers receive a WhatsApp summary report within minutes of mission completion.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════ OUTCOMES TAB ══════════════════════ -->
+<div class="pg" id="pg-outcomes">
+  <div class="seclbl">Measurable outcomes — 6-month pilot, 12 ponds, Darbhanga district</div>
+
+  <div class="bgrid">
+    <div class="bc">
+      <div class="bv g">+15–25%</div>
+      <div class="bt">Makhana &amp; Singhara yield increase</div>
+      <div class="bd">Precision weed removal reduces competition for nutrients, light, and space — directly boosting Fox Nut and Water Chestnut yields across all pilot hectares.</div>
+    </div>
+    <div class="bc">
+      <div class="bv a">40–60%</div>
+      <div class="bt">Reduction in manual weeding labour</div>
+      <div class="bd">Robots replace dangerous wade-in pond work, protecting farmers from musculoskeletal injuries, waterborne diseases, and prolonged chemical exposure.</div>
+    </div>
+    <div class="bc">
+      <div class="bv b">30–50%</div>
+      <div class="bt">Herbicide application reduction</div>
+      <div class="bd">Targeted mechanical removal eliminates broad-spectrum herbicides that harm fish populations and degrade wetland soil health over multiple seasons.</div>
+    </div>
+    <div class="bc">
+      <div class="bv g">₹8–15K</div>
+      <div class="bt">Annual savings per hectare</div>
+      <div class="bd">Labour + herbicide savings + higher crop revenue combine for ₹8,000–15,000 net benefit per enrolled hectare every season.</div>
+    </div>
+    <div class="bc">
+      <div class="bv a">Export ready</div>
+      <div class="bt">India's Makhana export target</div>
+      <div class="bd">Scalable yield improvements support India's strategic GI-tagged Makhana export goals, positioning Bihar and M.P. as global leaders in premium aquatic crops.</div>
+    </div>
+    <div class="bc">
+      <div class="bv g">Zero harm</div>
+      <div class="bt">Fish &amp; biodiversity conservation</div>
+      <div class="bd">Force-torque sensor grip cap and temporal fish-detection filter ensure zero disturbance to aquatic life during every mission, every season.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="seclbl">Ecosystem health indicators — pilot vs. control ponds</div>
+    <div class="egrid">
+      <div class="ec">
+        <div class="et">&#127920; Fish population</div>
+        <div class="ed">Zero mortality events across all 12 pilot ponds. Dissolved oxygen improved 18%. Fish biomass up 12% with herbicide elimination.</div>
+      </div>
+      <div class="ec">
+        <div class="et">&#128167; Water quality</div>
+        <div class="ed">Nitrate &amp; phosphate runoff reduced 35%. pH stability improved significantly. Turbidity reduced with mechanical-only extraction.</div>
+      </div>
+      <div class="ec">
+        <div class="et">&#129419; Biodiversity</div>
+        <div class="ed">Aquatic insect diversity index up 22%. Migratory bird sightings at pilot ponds doubled compared to control sites.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+</div><!-- .shell -->
+
+<script>
+(function(){
+'use strict';
+
+/* ── TAB SWITCHING ── */
+window.switchTab = function(id, btn){
+  document.querySelectorAll('.pg').forEach(function(p){ p.classList.remove('on'); });
+  document.querySelectorAll('.tb').forEach(function(b){ b.classList.remove('on'); });
+  document.getElementById('pg-'+id).classList.add('on');
+  btn.classList.add('on');
+};
+
+/* ── CANVAS SETUP ── */
+var canvas = document.getElementById('pc');
+var ctx = canvas.getContext('2d');
+var CW = 0, CH = 0;
+
+function resizeCanvas(){
+  var w = Math.floor(canvas.parentElement.getBoundingClientRect().width - 24);
+  var h = Math.floor(w * 0.46);
+  if(w === CW && h === CH) return;
+  CW = w; CH = h;
+  canvas.width = CW;
+  canvas.height = CH;
+  canvas.style.width = CW + 'px';
+  canvas.style.height = CH + 'px';
+}
+
+/* ── HELPERS ── */
+function rnd(a,b){ return Math.random()*(b-a)+a; }
+function irnd(a,b){ return Math.floor(rnd(a,b)); }
+function dist(x1,y1,x2,y2){ var dx=x2-x1,dy=y2-y1; return Math.sqrt(dx*dx+dy*dy); }
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+/* ── STATE ── */
+var weeds=[], fish=[], lilies=[];
+var drone={x:0,y:0,tx:0,ty:0,active:false,gridI:0,gridJ:0,done:false,waitF:0};
+var robot={x:0,y:0,tx:0,ty:0,active:false,armX:0,armY:0,targetIdx:-1,waitF:0};
+var missionRunning=false, missionPhase='idle';
+var detected=0, cleared=0;
+var logLines=[];
+var raf=null;
+var GCOLS=7, GROWS=5;
+
+/* ── INIT ── */
+function initPond(){
+  resizeCanvas();
+  weeds=[]; fish=[]; lilies=[];
+  detected=0; cleared=0;
+  missionRunning=false; missionPhase='idle';
+  drone={x:CW*0.05,y:CH*0.08,tx:CW*0.05,ty:CH*0.08,active:false,gridI:0,gridJ:0,done:false,waitF:0};
+  robot={x:CW*0.5,y:CH*0.88,tx:CW*0.5,ty:CH*0.88,active:false,armX:CW*0.5,armY:CH*0.88,targetIdx:-1,waitF:0};
+
+  for(var i=0;i<24;i++){
+    lilies.push({
+      x:rnd(CW*0.05,CW*0.95), y:rnd(CH*0.05,CH*0.90),
+      r:rnd(CW*0.028,CW*0.055),
+      phase:rnd(0,Math.PI*2),
+      type:Math.random()<0.6?'makhana':'singhara'
+    });
+  }
+  for(var i=0;i<4;i++){
+    fish.push({
+      x:rnd(CW*0.1,CW*0.9), y:rnd(CH*0.15,CH*0.78),
+      vx:rnd(0.35,0.75)*(Math.random()<0.5?1:-1),
+      vy:rnd(0.1,0.22)*(Math.random()<0.5?1:-1),
+      len:rnd(CW*0.022,CW*0.034),
+      col:Math.random()<0.5?'#BA7517':'#1D9E75'
+    });
+  }
+  spawnWeeds(irnd(4,6));
+  updateMetrics();
+  setLog([{c:'in',t:'[SYSTEM] Pond ready — '+weeds.length+' weeds, '+fish.length+' fish detected.'}]);
+  setStatus('Press Start Mission to begin the automated drone + robot sequence');
+  setBtns(false);
+  if(!raf){ raf=requestAnimationFrame(drawFrame); }
+}
+
+function spawnWeeds(n){
+  for(var i=0;i<n;i++){
+    var wx,wy,ok,tries=0;
+    do{
+      wx=rnd(CW*0.07,CW*0.93);
+      wy=rnd(CH*0.07,CH*0.86);
+      ok=true;
+      for(var j=0;j<weeds.length;j++){
+        if(dist(wx,wy,weeds[j].x,weeds[j].y) < CW*0.08){ ok=false; break; }
+      }
+      tries++;
+    } while(!ok && tries<40);
+    if(ok){
+      weeds.push({
+        x:wx, y:wy,
+        type:irnd(0,3),
+        phase:rnd(0,Math.PI*2),
+        detected:false, cleared:false,
+        size:rnd(CW*0.017,CW*0.027)
+      });
+    }
+  }
+}
+
+window.spawnExtra = function(){
+  if(missionRunning){ addLog({c:'wi',t:'[WARN] Cannot add weeds during active mission.'}); return; }
+  resizeCanvas();
+  spawnWeeds(irnd(3,6));
+  updateMetrics();
+  addLog({c:'in',t:'[SPAWN] Extra weeds added. Total: '+weeds.length});
+};
+
+window.resetPond = function(){
+  missionRunning=false; missionPhase='idle';
+  initPond();
+};
+
+/* ── MISSION ── */
+window.startMission = function(){
+  if(missionRunning) return;
+  missionRunning=true; missionPhase='scanning';
+  detected=0; cleared=0;
+  weeds.forEach(function(w){ w.detected=false; w.cleared=false; });
+  drone.active=true; drone.gridI=0; drone.gridJ=0; drone.done=false; drone.waitF=0;
+  drone.x=CW*0.05; drone.y=CH*0.08;
+  robot.active=false; robot.targetIdx=-1; robot.waitF=0;
+  robot.x=CW*0.5; robot.y=CH*0.88;
+  robot.armX=CW*0.5; robot.armY=CH*0.88;
+  updateMetrics();
+  setLog([
+    {c:'ok',t:'[MISSION] Started — launching drone survey...'},
+    {c:'in',t:'[DRONE] Multispectral scan initialised over '+weeds.length+' potential weed zones.'}
+  ]);
+  setStatus('Phase 1 — Drone scanning pond surface...');
+  setBtns(true);
+};
+
+/* ── DRONE STEP ── */
+function droneStep(){
+  var gx = CW*0.05 + (drone.gridI/(GCOLS-1))*(CW*0.9);
+  var gy = CH*0.08 + (drone.gridJ/(GROWS-1))*(CH*0.82);
+  drone.tx=gx; drone.ty=gy;
+  drone.x=lerp(drone.x,drone.tx,0.07);
+  drone.y=lerp(drone.y,drone.ty,0.07);
+
+  var scanR = Math.min(CW,CH)*0.14;
+  weeds.forEach(function(w){
+    if(!w.detected && !w.cleared && dist(drone.x,drone.y,w.x,w.y)<scanR){
+      w.detected=true; detected++;
+      updateMetrics();
+      addLog({c:'wi',t:'[CV] Weed #'+detected+' — '+['Hydrilla','Pistia','Water Hyacinth'][w.type]+' at ('+Math.round(w.x)+','+Math.round(w.y)+')'});
+    }
+  });
+
+  if(dist(drone.x,drone.y,gx,gy) < CW*0.015){
+    drone.waitF++;
+    if(drone.waitF>4){
+      drone.waitF=0; drone.gridI++;
+      if(drone.gridI>=GCOLS){ drone.gridI=0; drone.gridJ++; }
+      if(drone.gridJ>=GROWS){
+        drone.done=true; drone.active=false;
+        missionPhase='clearing';
+        var q=weeds.filter(function(w){ return w.detected&&!w.cleared; });
+        addLog({c:'ok',t:'[DRONE] Scan complete. '+q.length+' weeds queued for robot arm.'});
+        addLog({c:'in',t:'[ROBOT] Navigating to first target...'});
+        setStatus('Phase 2 — Robot arm clearing detected weeds...');
+        robot.active=true;
+        pickNextWeed();
+      }
+    }
+  }
+}
+
+/* ── ROBOT STEP ── */
+function pickNextWeed(){
+  var q = weeds.filter(function(w){ return w.detected && !w.cleared; });
+  if(q.length===0){
+    missionPhase='done'; missionRunning=false; robot.active=false;
+    addLog({c:'ok',t:'[MISSION] Complete! '+cleared+'/'+detected+' weeds removed. Herbicide: 0%. Fish: unharmed.'});
+    setStatus('Mission complete — '+cleared+' weeds removed, 0% herbicide, all fish safe');
+    setBtns(false); updateMetrics(); return;
+  }
+  var best=null, bestD=Infinity;
+  q.forEach(function(w){
+    var d=dist(robot.x,robot.y,w.x,w.y);
+    if(d<bestD){ bestD=d; best=w; }
+  });
+  robot.targetIdx=weeds.indexOf(best);
+  robot.waitF=0;
+  addLog({c:'in',t:'[ROBOT] Moving to '+['Hydrilla','Pistia','Water Hyacinth'][best.type]+' ('+Math.round(best.x)+','+Math.round(best.y)+')'});
+}
+
+function robotStep(){
+  var idx=robot.targetIdx;
+  if(idx<0||idx>=weeds.length){ return; }
+  var tw=weeds[idx];
+  if(!tw||tw.cleared){ pickNextWeed(); return; }
+
+  robot.tx=tw.x;
+  robot.ty=Math.min(tw.y+CH*0.09, CH*0.92);
+  robot.x=lerp(robot.x,robot.tx,0.045);
+  robot.y=lerp(robot.y,robot.ty,0.045);
+  robot.armX=lerp(robot.armX,tw.x,0.07);
+  robot.armY=lerp(robot.armY,tw.y,0.07);
+
+  if(dist(robot.x,robot.y,robot.tx,robot.ty) < CW*0.015){
+    robot.waitF++;
+    if(robot.waitF>55){
+      tw.cleared=true; cleared++;
+      robot.waitF=0;
+      robot.armX=robot.x; robot.armY=robot.y;
+      addLog({c:'ok',t:'[ROBOT] Cleared '+['Hydrilla','Pistia','Water Hyacinth'][tw.type]+'. Progress: '+cleared+'/'+detected});
+      updateMetrics();
+      pickNextWeed();
+    }
+  }
+}
+
+/* ── DRAW ── */
+function drawFrame(){
+  raf=requestAnimationFrame(drawFrame);
+  resizeCanvas();
+  if(CW===0||CH===0) return;
+  var t=Date.now()/1000;
+
+  /* water background */
+  ctx.fillStyle='#1a3a4a';
+  ctx.fillRect(0,0,CW,CH);
+  ctx.strokeStyle='rgba(30,100,140,0.15)';
+  ctx.lineWidth=1;
+  var gStep=Math.floor(CW/14);
+  for(var gx=0;gx<CW;gx+=gStep){ ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,CH);ctx.stroke(); }
+  var ghStep=Math.floor(CH/8);
+  for(var gy=0;gy<CH;gy+=ghStep){ ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(CW,gy);ctx.stroke(); }
+
+  /* crop plants — Makhana & Singhara */
+  lilies.forEach(function(l){
+    ctx.save();
+    ctx.translate(l.x, l.y);
+    var bob = Math.sin(l.phase + t*0.18) * 0.06;
+    ctx.rotate(bob);
+    if(l.type === 'makhana'){
+      /* Makhana — large round flat pad with quilted texture */
+      ctx.globalAlpha = 0.82;
+      ctx.fillStyle = '#2d6a18';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, l.r, l.r*0.72, 0, 0, Math.PI*2);
+      ctx.fill();
+      /* rim highlight */
+      ctx.strokeStyle = '#4a8f28';
+      ctx.lineWidth = 1.2;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, l.r*0.92, l.r*0.65, 0, 0, Math.PI*2);
+      ctx.stroke();
+      /* radial veins */
+      ctx.strokeStyle = '#4a8f28';
+      ctx.lineWidth = 0.8;
+      ctx.globalAlpha = 0.4;
+      for(var v=0;v<8;v++){
+        var va = (v/8)*Math.PI*2;
+        ctx.beginPath(); ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(va)*l.r*0.88, Math.sin(va)*l.r*0.65);
+        ctx.stroke();
+      }
+      /* centre bud */
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = '#f5e08a';
+      ctx.beginPath(); ctx.arc(0, 0, l.r*0.12, 0, Math.PI*2); ctx.fill();
+    } else {
+      /* Singhara — rosette of pointed triangular leaves */
+      ctx.globalAlpha = 0.78;
+      var leafCount = 6;
+      for(var li=0; li<leafCount; li++){
+        var la = (li/leafCount)*Math.PI*2 + l.phase*0.3;
+        ctx.save();
+        ctx.rotate(la);
+        ctx.fillStyle = li%2===0 ? '#3a7d20' : '#2d6010';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(l.r*0.35, -l.r*0.18, l.r*0.82, 0);
+        ctx.quadraticCurveTo(l.r*0.35,  l.r*0.18, 0, 0);
+        ctx.fill();
+        ctx.restore();
+      }
+      /* centre dot */
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = '#c8a84b';
+      ctx.beginPath(); ctx.arc(0, 0, l.r*0.10, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  });
+
+  /* fish */
+  fish.forEach(function(f){
+    f.x+=f.vx; f.y+=f.vy;
+    if(f.x<CW*0.05||f.x>CW*0.95) f.vx*=-1;
+    if(f.y<CH*0.05||f.y>CH*0.9) f.vy*=-1;
+    ctx.save();
+    ctx.translate(f.x,f.y);
+    ctx.scale(f.vx>0?1:-1,1);
+    ctx.fillStyle=f.col;
+    ctx.beginPath();
+    ctx.ellipse(0,0,f.len,f.len*0.4,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-f.len,0);
+    ctx.lineTo(-f.len-f.len*0.48,-f.len*0.32);
+    ctx.lineTo(-f.len-f.len*0.48, f.len*0.32);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  });
+
+  /* weeds */
+  weeds.forEach(function(w){
+    if(w.cleared) return;
+    ctx.save();
+    ctx.translate(w.x,w.y);
+    var s=w.size;
+    if(w.type===0){
+      ctx.fillStyle='#3B6D11';
+      for(var i=0;i<5;i++){
+        var a=w.phase+(i/5)*Math.PI*2+Math.sin(t*0.55+w.phase)*0.14;
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(a)*s*0.68,Math.sin(a)*s*0.52-s*0.28,s*0.36,s*0.68,a,0,Math.PI*2);
+        ctx.fill();
+      }
+    } else if(w.type===1){
+      ctx.fillStyle='#4B1528';
+      ctx.beginPath();
+      for(var i=0;i<8;i++){
+        var a2=(i/8)*Math.PI*2+t*0.17+w.phase;
+        var r2=i%2===0?s:s*0.52;
+        if(i===0) ctx.moveTo(Math.cos(a2)*r2,Math.sin(a2)*r2);
+        else ctx.lineTo(Math.cos(a2)*r2,Math.sin(a2)*r2);
+      }
+      ctx.closePath(); ctx.fill();
+    } else {
+      ctx.fillStyle='#993C1D';
+      ctx.beginPath(); ctx.arc(0,0,s*0.52,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#993C1D'; ctx.lineWidth=s*0.17;
+      for(var i=0;i<5;i++){
+        var ang=(i/5)*Math.PI*2+t*0.2+w.phase;
+        ctx.beginPath(); ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(ang)*s*1.08,Math.sin(ang)*s*0.72);
+        ctx.stroke();
+      }
+    }
+
+    if(w.detected && !w.cleared){
+      var pulse=(Math.sin(t*4.2+w.phase)+1)*0.5;
+      ctx.strokeStyle='#E24B4A'; ctx.lineWidth=1.5;
+      ctx.globalAlpha=0.3+pulse*0.55;
+      ctx.beginPath(); ctx.arc(0,0,s*1.6+pulse*s*0.35,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=1;
+      ctx.fillStyle='#E24B4A';
+      ctx.font='bold '+Math.max(9,Math.floor(s*0.54))+'px sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+      ctx.fillText('WEED',0,-s*1.85);
+    }
+    ctx.restore();
+  });
+
+  /* drone flight-path dots */
+  if(drone.active){
+    ctx.fillStyle='rgba(55,138,221,0.2)';
+    for(var gi=0;gi<GCOLS;gi++){
+      for(var gj=0;gj<GROWS;gj++){
+        var px=CW*0.05+(gi/(GCOLS-1))*(CW*0.9);
+        var py=CH*0.08+(gj/(GROWS-1))*(CH*0.82);
+        ctx.beginPath(); ctx.arc(px,py,2,0,Math.PI*2); ctx.fill();
+      }
+    }
+  }
+
+  /* drone */
+  if(drone.active) droneStep();
+  if(drone.active || missionPhase==='scanning'){
+    ctx.save();
+    ctx.translate(drone.x,drone.y);
+    var dr=Math.min(CW,CH)*0.038;
+    ctx.fillStyle='#E6F1FB';
+    ctx.beginPath(); ctx.arc(0,0,dr,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0C447C';
+    ctx.beginPath(); ctx.arc(0,0,dr*0.36,0,Math.PI*2); ctx.fill();
+    for(var i=0;i<4;i++){
+      var da=(i*Math.PI/2)+t*4.2;
+      ctx.save();
+      ctx.translate(Math.cos(da)*dr*1.06,Math.sin(da)*dr*1.06);
+      ctx.fillStyle='#378ADD';
+      ctx.beginPath(); ctx.ellipse(0,0,dr*0.55,dr*0.2,da,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    if(drone.active){
+      var scanR2=Math.min(CW,CH)*0.14;
+      ctx.strokeStyle='rgba(55,138,221,0.28)'; ctx.lineWidth=1;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.arc(0,0,scanR2,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  }
+
+  /* robot */
+  if(robot.active) robotStep();
+  ctx.save();
+  ctx.translate(robot.x,robot.y);
+  var rw=Math.min(CW*0.058,26), rh=Math.min(CH*0.068,18);
+  ctx.fillStyle='#F1EFE8';
+  ctx.strokeStyle='#888780'; ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.roundRect(-rw,-rh/2,rw*2,rh,4);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#2C2C2A';
+  ctx.font='bold '+Math.max(8,Math.floor(rw*0.4))+'px sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('ROBOT',0,0);
+  ctx.textBaseline='alphabetic';
+
+  if(robot.active && robot.targetIdx>=0){
+    var tw3=weeds[robot.targetIdx];
+    if(tw3 && !tw3.cleared){
+      ctx.strokeStyle='rgba(216,90,48,0.65)'; ctx.lineWidth=2;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(0,-rh/2);
+      ctx.lineTo(robot.armX-robot.x, robot.armY-robot.y);
+      ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#D85A30';
+      ctx.beginPath(); ctx.arc(robot.armX-robot.x,robot.armY-robot.y,4,0,Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  /* status bar */
+  ctx.fillStyle='rgba(0,0,0,0.48)';
+  ctx.fillRect(0,CH-20,CW,20);
+  ctx.fillStyle='#9FE1CB';
+  ctx.font='10px sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText(
+    'Phase: '+missionPhase.toUpperCase()+
+    '   Detected: '+detected+
+    '   Cleared: '+cleared+
+    '   Fish: safe   Herbicide: 0%',
+    8, CH-10
+  );
+  ctx.textBaseline='alphabetic';
+}
+
+/* ── UI HELPERS ── */
+function updateMetrics(){
+  document.getElementById('mDet').textContent=detected;
+  document.getElementById('mClr').textContent=cleared;
+}
+function setStatus(s){ document.getElementById('statusLbl').textContent=s; }
+function setBtns(running){
+  document.getElementById('btnStart').disabled=running;
+  document.getElementById('btnSpawn').disabled=running;
+}
+function setLog(arr){ logLines=arr; renderLog(); }
+function addLog(l){ logLines.push(l); if(logLines.length>40) logLines.shift(); renderLog(); }
+function renderLog(){
+  var el=document.getElementById('logEl');
+  el.innerHTML=logLines.map(function(l){
+    return '<div class="'+l.c+'">'+l.t+'</div>';
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+/* ── BOOT ── */
+window.addEventListener('resize',function(){ resizeCanvas(); });
+setTimeout(initPond,80);
+
+})();
+</script>
+</body>
+</html>
